@@ -1,12 +1,11 @@
 /**
  * ============================================================================
- * AURA ARCADE — HIGH-GRAPHICS PONG 2D TABLE TENNIS ENGINE (js/games/pongGame.js)
+ * AURA ARCADE — BALANCED PONG 2D ENGINE WITH GOAL NET BOXES (js/games/pongGame.js)
  * ----------------------------------------------------------------------------
- * Features HD Visual Effects:
- * - Glowing paddles with border highlights & metallic gradients
- * - Ball motion trail particles system
- * - Impact spark particle bursts on paddle & wall bounces
- * - Neon center net & glowing high-contrast score counters
+ * Fixes & Balance Updates:
+ * - Reduced ball speed (4.0px/frame) with gentle reflection acceleration (1.03)
+ * - Rendered clear glowing GOAL NET BOXES on Left & Right canvas borders
+ * - Smooth AI tracking for engaging 1-player matches
  * ============================================================================
  */
 
@@ -22,15 +21,16 @@ class PongGame {
 
         this.paddleWidth = 14;
         this.paddleHeight = 94;
+        this.goalWidth = 12; // Visible Goal Net Box Depth
 
         this.p1 = {
-            x: 24,
+            x: 28,
             y: this.height / 2 - this.paddleHeight / 2,
             score: 0
         };
 
         this.p2 = {
-            x: this.width - 24 - this.paddleWidth,
+            x: this.width - 28 - this.paddleWidth,
             y: this.height / 2 - this.paddleHeight / 2,
             score: 0
         };
@@ -39,16 +39,16 @@ class PongGame {
             x: this.width / 2,
             y: this.height / 2,
             radius: 9,
-            vx: 5,
-            vy: 3,
-            speed: 6.5
+            vx: 4,
+            vy: 2.5,
+            speed: 4.0 // Reduced from 6.5 to 4.0 for comfortable control
         };
 
         this.particles = [];
         this.trail = [];
 
         this.isAi = true;
-        this.paddleSpeed = 7.5;
+        this.paddleSpeed = 6.5;
 
         this.isRunning = false;
         this.isGameOver = false;
@@ -87,7 +87,7 @@ class PongGame {
     resetBall(direction = 1) {
         this.ball.x = this.width / 2;
         this.ball.y = this.height / 2;
-        this.ball.speed = 6.5;
+        this.ball.speed = 4.0;
         const angle = (Math.random() * Math.PI / 4) - (Math.PI / 8);
         this.ball.vx = direction * this.ball.speed * Math.cos(angle);
         this.ball.vy = this.ball.speed * Math.sin(angle);
@@ -104,7 +104,7 @@ class PongGame {
     spawnSparks(x, y, color) {
         for (let i = 0; i < 10; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * 5 + 1;
+            const speed = Math.random() * 4 + 1;
             this.particles.push({
                 x: x,
                 y: y,
@@ -128,7 +128,7 @@ class PongGame {
     }
 
     update() {
-        // Player 1 Paddle
+        // Player 1 Paddle (W/S or Up/Down)
         if (this.keys['KeyW'] || this.keys['ArrowUp']) {
             this.p1.y = Math.max(0, this.p1.y - this.paddleSpeed);
         }
@@ -139,13 +139,13 @@ class PongGame {
         // AI Paddle 2
         if (this.isAi) {
             const targetY = this.ball.y - this.paddleHeight / 2;
-            this.p2.y += (targetY - this.p2.y) * 0.09;
+            this.p2.y += (targetY - this.p2.y) * 0.07;
             this.p2.y = Math.max(0, Math.min(this.height - this.paddleHeight, this.p2.y));
         }
 
-        // Add Ball Motion Trail
-        this.trail.push({ x: this.ball.x, y: this.ball.y, alpha: 0.8 });
-        if (this.trail.length > 8) this.trail.shift();
+        // Trail
+        this.trail.push({ x: this.ball.x, y: this.ball.y });
+        if (this.trail.length > 6) this.trail.shift();
 
         // Move Ball
         this.ball.x += this.ball.vx;
@@ -158,7 +158,7 @@ class PongGame {
             if (window.audioEngine) window.audioEngine.playBounce();
         }
 
-        // Player 1 Paddle Impact
+        // Player 1 Paddle Hit
         if (this.ball.vx < 0) {
             if (
                 this.ball.x - this.ball.radius <= this.p1.x + this.paddleWidth &&
@@ -166,13 +166,13 @@ class PongGame {
                 this.ball.y >= this.p1.y &&
                 this.ball.y <= this.p1.y + this.paddleHeight
             ) {
-                this.ball.vx *= -1.08;
+                this.ball.vx *= -1.03; // Subtle acceleration
                 this.spawnSparks(this.p1.x + this.paddleWidth, this.ball.y, '#10b981');
                 if (window.audioEngine) window.audioEngine.playBounce();
             }
         }
 
-        // Player 2 Paddle Impact
+        // Player 2 Paddle Hit
         if (this.ball.vx > 0) {
             if (
                 this.ball.x + this.ball.radius >= this.p2.x &&
@@ -180,7 +180,7 @@ class PongGame {
                 this.ball.y >= this.p2.y &&
                 this.ball.y <= this.p2.y + this.paddleHeight
             ) {
-                this.ball.vx *= -1.08;
+                this.ball.vx *= -1.03;
                 this.spawnSparks(this.p2.x, this.ball.y, '#ef4444');
                 if (window.audioEngine) window.audioEngine.playBounce();
             }
@@ -195,16 +195,16 @@ class PongGame {
             if (p.life <= 0) this.particles.splice(i, 1);
         }
 
-        // Left Goal (Player 2 Scores)
-        if (this.ball.x - this.ball.radius <= 0) {
+        // Left Goal Box (Player 2 Scores)
+        if (this.ball.x - this.ball.radius <= this.goalWidth) {
             this.p2.score++;
             if (window.audioEngine) window.audioEngine.playHit();
             if (this.p2.score >= 5) this.triggerGameOver(false);
             else this.resetBall(1);
         }
 
-        // Right Goal (Player 1 Scores)
-        if (this.ball.x + this.ball.radius >= this.width) {
+        // Right Goal Box (Player 1 Scores)
+        if (this.ball.x + this.ball.radius >= this.width - this.goalWidth) {
             this.p1.score++;
             this.onScoreUpdate(this.p1.score);
             if (window.audioEngine) window.audioEngine.playScore();
@@ -224,6 +224,21 @@ class PongGame {
         // Deep Grid Canvas
         this.ctx.fillStyle = '#060a12';
         this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Render Visible Goal Net Boxes (Left & Right Goal Zones)
+        // Left Goal Net Box (Red Zone)
+        this.ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+        this.ctx.fillRect(0, 0, this.goalWidth, this.height);
+        this.ctx.strokeStyle = '#ef4444';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(0, 0, this.goalWidth, this.height);
+
+        // Right Goal Net Box (Green Zone)
+        this.ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+        this.ctx.fillRect(this.width - this.goalWidth, 0, this.goalWidth, this.height);
+        this.ctx.strokeStyle = '#10b981';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(this.width - this.goalWidth, 0, this.goalWidth, this.height);
 
         // Center Net Line
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
@@ -256,11 +271,11 @@ class PongGame {
         this.trail.forEach((t, i) => {
             this.ctx.fillStyle = `rgba(255, 255, 255, ${0.1 * i})`;
             this.ctx.beginPath();
-            this.ctx.arc(t.x, t.y, this.ball.radius * (i / 8), 0, Math.PI * 2);
+            this.ctx.arc(t.x, t.y, this.ball.radius * (i / 6), 0, Math.PI * 2);
             this.ctx.fill();
         });
 
-        // Player 1 Paddle (Emerald)
+        // Player 1 Paddle (Green)
         const p1Grad = this.ctx.createLinearGradient(this.p1.x, 0, this.p1.x + this.paddleWidth, 0);
         p1Grad.addColorStop(0, '#34d399');
         p1Grad.addColorStop(1, '#059669');
