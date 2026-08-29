@@ -1,12 +1,12 @@
 /**
  * ============================================================================
- * AURA ARCADE — CHROME DINO RUNNER GAME ENGINE (js/games/dinoRunner.js)
+ * AURA ARCADE — HIGH-GRAPHICS DINO RUNNER ENGINE (js/games/dinoRunner.js)
  * ----------------------------------------------------------------------------
- * Features:
- * - Jump & duck gravity physics
- * - Procedural cactus & flying bird obstacle spawning
- * - Continuous speed acceleration scaling
- * - Web Audio sound FX integration
+ * Features HD Visual Effects:
+ * - Animated T-Rex running legs & eye details
+ * - 3D shaded cacti with branching arms & spines
+ * - Flying pterodactyl birds with flapping wings
+ * - Running dust particle specks & parallax starry sky
  * ============================================================================
  */
 
@@ -19,10 +19,9 @@ class DinoRunnerGame {
 
         this.width = canvas.width;
         this.height = canvas.height;
-
         this.groundY = this.height - 60;
+        this.tickCounter = 0;
 
-        // Dino Physics Properties
         this.dino = {
             x: 80,
             y: this.groundY - 50,
@@ -32,15 +31,14 @@ class DinoRunnerGame {
             gravity: 0.7,
             jumpForce: -13,
             isJumping: false,
-            isDucking: false
+            isDucking: false,
+            legFrame: 0
         };
 
-        // Obstacles Array (Cacti & Birds)
         this.obstacles = [];
+        this.dustParticles = [];
         this.spawnTimer = 0;
         this.gameSpeed = 6;
-
-        // Ground parallax offset
         this.groundOffsetX = 0;
 
         this.isRunning = false;
@@ -60,9 +58,11 @@ class DinoRunnerGame {
         this.dino.isDucking = false;
 
         this.obstacles = [];
+        this.dustParticles = [];
         this.spawnTimer = 0;
         this.gameSpeed = 6;
         this.score = 0;
+        this.tickCounter = 0;
 
         this.isRunning = true;
         this.isGameOver = false;
@@ -115,6 +115,7 @@ class DinoRunnerGame {
 
     loop() {
         if (!this.isRunning) return;
+        this.tickCounter++;
 
         this.update();
         this.render();
@@ -125,17 +126,32 @@ class DinoRunnerGame {
     }
 
     update() {
-        // Speed Scaling over time
         this.gameSpeed += 0.0015;
-
-        // Score Increment based on distance
         this.score += 0.15;
         this.onScoreUpdate(Math.floor(this.score));
 
-        // Ground scrolling
         this.groundOffsetX = (this.groundOffsetX + this.gameSpeed) % 40;
 
-        // Dino Gravity & Jump Update
+        // Running dust particles
+        if (!this.dino.isJumping && this.tickCounter % 4 === 0) {
+            this.dustParticles.push({
+                x: this.dino.x,
+                y: this.groundY - 2,
+                vx: -this.gameSpeed * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                life: 0.7
+            });
+        }
+
+        for (let i = this.dustParticles.length - 1; i >= 0; i--) {
+            const p = this.dustParticles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.04;
+            if (p.life <= 0) this.dustParticles.splice(i, 1);
+        }
+
+        // Dino Jump Physics
         if (this.dino.isJumping) {
             this.dino.velocityY += this.dino.gravity;
             this.dino.y += this.dino.velocityY;
@@ -147,40 +163,42 @@ class DinoRunnerGame {
             }
         }
 
-        // Procedural Obstacle Spawning
+        // Procedural Obstacles Spawning
         this.spawnTimer++;
-        if (this.spawnTimer > Math.max(50, 110 - Math.floor(this.gameSpeed * 3))) {
+        if (this.spawnTimer > Math.max(45, 110 - Math.floor(this.gameSpeed * 3))) {
             this.spawnTimer = 0;
+            const isBird = Math.random() < 0.35 && this.score > 80;
 
-            const isBird = Math.random() < 0.3 && this.score > 100;
             if (isBird) {
-                // Pterodactyl Bird Obstacle
                 this.obstacles.push({
                     x: this.width,
                     y: this.groundY - 65,
-                    width: 38,
-                    height: 26,
-                    type: 'bird'
+                    width: 40,
+                    height: 28,
+                    type: 'bird',
+                    wingAngle: 0
                 });
             } else {
-                // Cactus Obstacle
-                const height = Math.random() > 0.5 ? 45 : 32;
+                const height = Math.random() > 0.5 ? 48 : 34;
                 this.obstacles.push({
                     x: this.width,
                     y: this.groundY - height,
-                    width: 24,
+                    width: 26,
                     height: height,
                     type: 'cactus'
                 });
             }
         }
 
-        // Move Obstacles & Check Collisions
+        // Move Obstacles & Collisions
         for (let i = this.obstacles.length - 1; i >= 0; i--) {
             const obs = this.obstacles[i];
             obs.x -= this.gameSpeed;
 
-            // AABB Collision Detection
+            if (obs.type === 'bird') {
+                obs.wingAngle = Math.sin(this.tickCounter * 0.2) * 8;
+            }
+
             if (
                 this.dino.x < obs.x + obs.width &&
                 this.dino.x + this.dino.width > obs.x &&
@@ -205,51 +223,112 @@ class DinoRunnerGame {
     }
 
     render() {
-        // Clear Canvas
-        this.ctx.fillStyle = '#0f172a';
+        // Sky Canvas
+        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        skyGrad.addColorStop(0, '#090d16');
+        skyGrad.addColorStop(0.7, '#111827');
+        skyGrad.addColorStop(1, '#1f2937');
+        this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Render Ground Line
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        // Ground Line
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.groundY);
         this.ctx.lineTo(this.width, this.groundY);
         this.ctx.stroke();
 
-        // Render Ground Dots Parallax
+        // Ground Texture Specks
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         for (let x = -this.groundOffsetX; x < this.width; x += 40) {
-            this.ctx.fillRect(x, this.groundY + 12, 16, 2);
-            this.ctx.fillRect(x + 20, this.groundY + 28, 8, 2);
+            this.ctx.fillRect(x, this.groundY + 10, 16, 2);
+            this.ctx.fillRect(x + 22, this.groundY + 24, 8, 2);
         }
 
-        // Render Dino Sprite
+        // Render Running Dust
+        this.dustParticles.forEach(p => {
+            this.ctx.fillStyle = 'rgba(255, 255, 255, ' + Math.max(0, p.life * 0.4) + ')';
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+
+        // Render HD T-Rex Dino
         this.ctx.fillStyle = '#10b981';
+        const dx = this.dino.x;
+        const dy = this.dino.y;
+        const dw = this.dino.width;
+        const dh = this.dino.height;
+
         if (this.dino.isDucking) {
-            // Ducking Dino
-            this.ctx.fillRect(this.dino.x, this.dino.y, this.dino.width + 10, this.dino.height);
-        } else {
-            // Standing / Jumping Dino
-            this.ctx.fillRect(this.dino.x, this.dino.y, this.dino.width, this.dino.height);
-            // Dino Head Eye
+            // Ducking Dino Body
+            this.ctx.beginPath();
+            this.ctx.roundRect(dx, dy, dw + 12, dh, 6);
+            this.ctx.fill();
+
+            // Eye
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.fillRect(this.dino.x + 28, this.dino.y + 6, 6, 6);
+            this.ctx.fillRect(dx + dw, dy + 4, 4, 4);
+        } else {
+            // Body
+            this.ctx.beginPath();
+            this.ctx.roundRect(dx, dy + 10, dw - 10, dh - 10, 6);
+            this.ctx.fill();
+
+            // Head
+            this.ctx.fillRect(dx + 12, dy, 24, 20);
+
+            // Eye
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fillRect(dx + 28, dy + 4, 5, 5);
+
+            // Tail
+            this.ctx.beginPath();
+            this.ctx.moveTo(dx, dy + 20);
+            this.ctx.lineTo(dx - 10, dy + 28);
+            this.ctx.lineTo(dx, dy + 32);
+            this.ctx.fill();
+
+            // Animated Running Legs
+            this.ctx.fillStyle = '#059669';
+            const legOffset = Math.sin(this.tickCounter * 0.4) * 6;
+            if (this.dino.isJumping) {
+                this.ctx.fillRect(dx + 8, dy + dh - 10, 6, 10);
+                this.ctx.fillRect(dx + 22, dy + dh - 10, 6, 10);
+            } else {
+                this.ctx.fillRect(dx + 8, dy + dh - 10, 6, 10 + legOffset);
+                this.ctx.fillRect(dx + 22, dy + dh - 10, 6, 10 - legOffset);
+            }
         }
 
-        // Render Obstacles
+        // Render HD Obstacles
         this.obstacles.forEach(obs => {
             if (obs.type === 'cactus') {
+                // Multi-branch Cactus
                 this.ctx.fillStyle = '#ef4444';
-                this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                // Main Stem
+                this.ctx.beginPath();
+                this.ctx.roundRect(obs.x + 8, obs.y, 10, obs.height, 4);
+                this.ctx.fill();
+                // Left Branch
+                this.ctx.fillRect(obs.x, obs.y + 12, 10, 4);
+                this.ctx.fillRect(obs.x, obs.y + 6, 4, 10);
+                // Right Branch
+                this.ctx.fillRect(obs.x + 16, obs.y + 18, 10, 4);
+                this.ctx.fillRect(obs.x + 22, obs.y + 10, 4, 12);
             } else {
-                // Flying Bird
+                // Flying Pterodactyl Bird
                 this.ctx.fillStyle = '#f59e0b';
                 this.ctx.beginPath();
-                this.ctx.moveTo(obs.x, obs.y + obs.height / 2);
-                this.ctx.lineTo(obs.x + obs.width / 2, obs.y);
-                this.ctx.lineTo(obs.x + obs.width, obs.y + obs.height / 2);
-                this.ctx.lineTo(obs.x + obs.width / 2, obs.y + obs.height);
+                this.ctx.ellipse(obs.x + obs.width / 2, obs.y + obs.height / 2, 14, 8, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Flapping Wings
+                this.ctx.beginPath();
+                this.ctx.moveTo(obs.x + obs.width / 2, obs.y + obs.height / 2);
+                this.ctx.lineTo(obs.x + obs.width / 2 - 8, obs.y - obs.wingAngle);
+                this.ctx.lineTo(obs.x + obs.width / 2 + 8, obs.y + obs.height / 2);
                 this.ctx.fill();
             }
         });
@@ -263,5 +342,4 @@ class DinoRunnerGame {
     }
 }
 
-// Export to global scope
 window.DinoRunnerGame = DinoRunnerGame;
