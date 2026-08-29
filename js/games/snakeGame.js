@@ -1,12 +1,10 @@
 /**
  * ============================================================================
- * AURA ARCADE — HIGH-GRAPHICS SNAKE CLASSIC ENGINE (js/games/snakeGame.js)
+ * AURA ARCADE — LARGE-GRID SNAKE CLASSIC ENGINE (js/games/snakeGame.js)
  * ----------------------------------------------------------------------------
- * Features HD Visual Effects:
- * - Glowing Snake Head with animated eyes & tongue
- * - Gradated emerald body segments with smooth rounded corners
- * - Radial glowing red apple food with green leaf & stem
- * - Pickup sparkle particle explosion physics when eating food
+ * Fixes & Balance Updates:
+ * - Increased Grid Cell Size (32px) for bold, large snake body segments & apples
+ * - Smooth control pacing (110ms tick interval)
  * ============================================================================
  */
 
@@ -20,7 +18,8 @@ class SnakeGame {
         this.width = canvas.width;
         this.height = canvas.height;
 
-        this.gridSize = 20;
+        // Increased Grid Cell Size from 20px to 32px for larger, bold visibility
+        this.gridSize = 32;
         this.cols = Math.floor(this.width / this.gridSize);
         this.rows = Math.floor(this.height / this.gridSize);
 
@@ -33,10 +32,8 @@ class SnakeGame {
         this.nextDir = { x: 1, y: 0 };
         this.food = { x: 0, y: 0 };
 
-        // Sparkle Particles
         this.particles = [];
-
-        this.gameSpeed = 85;
+        this.gameSpeed = 110; // Relaxed tick interval for clear reaction time
         this.lastTickTime = 0;
         this.animId = null;
 
@@ -116,7 +113,6 @@ class SnakeGame {
             this.lastTickTime = currentTime;
         }
 
-        // Particle System update
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.x += p.vx;
@@ -140,7 +136,7 @@ class SnakeGame {
             y: this.snake[0].y + this.dir.y
         };
 
-        // Collision Checks
+        // Collision Check
         if (head.x < 0 || head.x >= this.cols || head.y < 0 || head.y >= this.rows ||
             this.snake.some(seg => seg.x === head.x && seg.y === head.y)) {
             this.triggerGameOver();
@@ -155,12 +151,11 @@ class SnakeGame {
             this.onScoreUpdate(this.score);
             if (window.audioEngine) window.audioEngine.playScore();
 
-            // Sparkle Particle Burst
             const px = this.food.x * this.gridSize + this.gridSize / 2;
             const py = this.food.y * this.gridSize + this.gridSize / 2;
-            for (let i = 0; i < 12; i++) {
+            for (let i = 0; i < 14; i++) {
                 const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 4 + 1;
+                const speed = Math.random() * 5 + 1;
                 this.particles.push({
                     x: px,
                     y: py,
@@ -190,7 +185,7 @@ class SnakeGame {
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Grid Lines
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
         this.ctx.lineWidth = 1;
         for (let c = 0; c < this.cols; c++) {
             this.ctx.beginPath();
@@ -210,57 +205,57 @@ class SnakeGame {
             this.ctx.fillStyle = p.color;
             this.ctx.globalAlpha = Math.max(0, p.life);
             this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            this.ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
             this.ctx.fill();
         });
         this.ctx.globalAlpha = 1.0;
 
-        // Render Glowing Food Apple
+        // Render Glowing Food Apple (Large)
         const fx = this.food.x * this.gridSize + this.gridSize / 2;
         const fy = this.food.y * this.gridSize + this.gridSize / 2;
 
-        const appleGrad = this.ctx.createRadialGradient(fx - 2, fy - 2, 2, fx, fy, this.gridSize / 2);
+        const appleGrad = this.ctx.createRadialGradient(fx - 3, fy - 3, 3, fx, fy, this.gridSize / 2);
         appleGrad.addColorStop(0, '#f87171');
         appleGrad.addColorStop(0.8, '#ef4444');
         appleGrad.addColorStop(1, '#b91c1c');
 
         this.ctx.fillStyle = appleGrad;
         this.ctx.beginPath();
-        this.ctx.arc(fx, fy, this.gridSize / 2 - 2, 0, Math.PI * 2);
+        this.ctx.arc(fx, fy, this.gridSize / 2 - 3, 0, Math.PI * 2);
         this.ctx.fill();
 
         // Apple Leaf
         this.ctx.fillStyle = '#10b981';
-        this.ctx.fillRect(fx - 1, fy - this.gridSize / 2 - 2, 3, 4);
+        this.ctx.fillRect(fx - 2, fy - this.gridSize / 2 - 2, 4, 5);
 
-        // Render HD Snake Segments
+        // Render Large Snake Segments
         this.snake.forEach((seg, idx) => {
             const sx = seg.x * this.gridSize;
             const sy = seg.y * this.gridSize;
 
             if (idx === 0) {
-                // Snake Head with Eyes & Glow
+                // Snake Head
                 this.ctx.fillStyle = '#34d399';
                 this.ctx.beginPath();
-                this.ctx.roundRect(sx + 1, sy + 1, this.gridSize - 2, this.gridSize - 2, 6);
+                this.ctx.roundRect(sx + 2, sy + 2, this.gridSize - 4, this.gridSize - 4, 8);
                 this.ctx.fill();
 
-                // Eyes based on direction
+                // Eyes
                 this.ctx.fillStyle = '#000000';
-                let eye1X = sx + 5, eye1Y = sy + 5, eye2X = sx + 13, eye2Y = sy + 5;
+                let eye1X = sx + 8, eye1Y = sy + 8, eye2X = sx + 20, eye2Y = sy + 8;
 
-                if (this.dir.x === 1) { eye1X = sx + 12; eye1Y = sy + 4; eye2X = sx + 12; eye2Y = sy + 12; }
-                else if (this.dir.x === -1) { eye1X = sx + 4; eye1Y = sy + 4; eye2X = sx + 4; eye2Y = sy + 12; }
-                else if (this.dir.y === 1) { eye1X = sx + 4; eye1Y = sy + 12; eye2X = sx + 12; eye2Y = sy + 12; }
+                if (this.dir.x === 1) { eye1X = sx + 20; eye1Y = sy + 6; eye2X = sx + 20; eye2Y = sy + 20; }
+                else if (this.dir.x === -1) { eye1X = sx + 6; eye1Y = sy + 6; eye2X = sx + 6; eye2Y = sy + 20; }
+                else if (this.dir.y === 1) { eye1X = sx + 6; eye1Y = sy + 20; eye2X = sx + 20; eye2Y = sy + 20; }
 
-                this.ctx.fillRect(eye1X, eye1Y, 3, 3);
-                this.ctx.fillRect(eye2X, eye2Y, 3, 3);
+                this.ctx.fillRect(eye1X, eye1Y, 4, 4);
+                this.ctx.fillRect(eye2X, eye2Y, 4, 4);
             } else {
-                // Body Segments Gradated
+                // Body Segments
                 const alpha = Math.max(0.4, 1 - (idx / (this.snake.length + 5)));
                 this.ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
                 this.ctx.beginPath();
-                this.ctx.roundRect(sx + 2, sy + 2, this.gridSize - 4, this.gridSize - 4, 4);
+                this.ctx.roundRect(sx + 3, sy + 3, this.gridSize - 6, this.gridSize - 6, 6);
                 this.ctx.fill();
             }
         });
