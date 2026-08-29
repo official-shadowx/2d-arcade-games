@@ -1,11 +1,11 @@
 /**
  * ============================================================================
- * AURA ARCADE — BALANCED FLAPPY BIRD ENGINE (js/games/flappyBird.js)
+ * AURA ARCADE — ULTRA-SMOOTH FLAPPY BIRD ENGINE (js/games/flappyBird.js)
  * ----------------------------------------------------------------------------
- * Fixes & Balance Updates:
- * - Reduced gravity (0.30) & smooth float physics for easy control
- * - Increased pipe gap (175px) & relaxed speed (2.2px/frame)
- * - Initial 1-second float grace period on start before first pipe spawn
+ * Fixes:
+ * - Hover Mode on start: Bird hovers gently in mid-air until player first flaps
+ * - Ultra-gentle gravity (0.18) & capped max fall speed (4.0px)
+ * - Relaxed pipe speed (1.8px/frame) and wide 185px gap
  * ============================================================================
  */
 
@@ -21,17 +21,19 @@ class FlappyBirdGame {
 
         this.isRunning = false;
         this.isGameOver = false;
+        this.hasStartedFlapping = false; // Hover state flag
         this.score = 0;
         this.tickCounter = 0;
 
-        // Bird Properties (Smoother & Slower Physics)
+        // Ultra-smooth floaty bird physics
         this.bird = {
             x: 140,
             y: this.height / 2,
             radius: 16,
             velocity: 0,
-            gravity: 0.30,      // Reduced from 0.45 for smooth float
-            jumpForce: -7.2,     // Smoother jump
+            gravity: 0.18,      // Ultra-gentle gravity
+            jumpForce: -5.2,     // Soft, gentle flap
+            maxFallSpeed: 4.0,   // Capped terminal fall speed
             rotation: 0,
             wingAngle: 0
         };
@@ -39,10 +41,9 @@ class FlappyBirdGame {
         this.particles = [];
         this.pipes = [];
         this.pipeWidth = 64;
-        this.pipeGap = 175;       // Increased from 150 to 175 for comfortable gap
-        this.pipeSpeed = 2.2;     // Reduced from 3.0 to 2.2 for relaxed pacing
+        this.pipeGap = 185;       // Wide gap for easy passage
+        this.pipeSpeed = 1.8;     // Slower pipe scrolling
         this.spawnTimer = 0;
-        this.gracePeriod = 45;    // Grace period frames before first pipe
 
         this.animId = null;
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -57,12 +58,12 @@ class FlappyBirdGame {
         this.pipes = [];
         this.particles = [];
         this.spawnTimer = 0;
-        this.gracePeriod = 45;
         this.score = 0;
         this.tickCounter = 0;
 
         this.isRunning = true;
         this.isGameOver = false;
+        this.hasStartedFlapping = false; // Start in Hover Mode
 
         this.onScoreUpdate(this.score);
 
@@ -79,10 +80,13 @@ class FlappyBirdGame {
             return;
         }
 
+        // First flap activates active physics & pipe movement
+        this.hasStartedFlapping = true;
         this.bird.velocity = this.bird.jumpForce;
+
         if (window.audioEngine) window.audioEngine.playJump();
 
-        // Spawn jump particle burst
+        // Particle burst
         for (let i = 0; i < 5; i++) {
             this.particles.push({
                 x: this.bird.x - 10,
@@ -115,12 +119,22 @@ class FlappyBirdGame {
     }
 
     update() {
-        // Gravity & Velocity
+        // HOVER MODE: If player hasn't pressed Space yet, hover gently in place
+        if (!this.hasStartedFlapping) {
+            this.bird.y = (this.height / 2) + Math.sin(this.tickCounter * 0.08) * 8;
+            this.bird.wingAngle = Math.sin(this.tickCounter * 0.2) * 0.5;
+            return;
+        }
+
+        // Active Gravity & Physics
         this.bird.velocity += this.bird.gravity;
+        if (this.bird.velocity > this.bird.maxFallSpeed) {
+            this.bird.velocity = this.bird.maxFallSpeed;
+        }
         this.bird.y += this.bird.velocity;
 
-        // Rotation & Wing Flap Animation
-        this.bird.rotation = Math.min(Math.PI / 5, Math.max(-Math.PI / 5, this.bird.velocity * 0.07));
+        // Rotation & Wing Animation
+        this.bird.rotation = Math.min(Math.PI / 6, Math.max(-Math.PI / 6, this.bird.velocity * 0.06));
         this.bird.wingAngle = Math.sin(this.tickCounter * 0.2) * 0.5;
 
         // Ceiling & Floor Collision
@@ -129,13 +143,13 @@ class FlappyBirdGame {
             return;
         }
 
-        // Particles Trail
-        if (this.tickCounter % 4 === 0) {
+        // Particles
+        if (this.tickCounter % 5 === 0) {
             this.particles.push({
                 x: this.bird.x - 12,
                 y: this.bird.y,
-                vx: -1.2,
-                vy: (Math.random() - 0.5) * 0.4,
+                vx: -1.0,
+                vy: (Math.random() - 0.5) * 0.3,
                 life: 0.8,
                 color: 'rgba(245, 158, 11, 0.5)'
             });
@@ -149,15 +163,9 @@ class FlappyBirdGame {
             if (p.life <= 0) this.particles.splice(i, 1);
         }
 
-        // Grace Period before spawning pipes
-        if (this.gracePeriod > 0) {
-            this.gracePeriod--;
-            return;
-        }
-
         // Spawn Pipes
         this.spawnTimer++;
-        if (this.spawnTimer > 110) {
+        if (this.spawnTimer > 120) {
             this.spawnTimer = 0;
             const minHeight = 60;
             const maxHeight = this.height - this.pipeGap - minHeight;
@@ -260,6 +268,14 @@ class FlappyBirdGame {
             this.ctx.strokeRect(p.x - 4, p.topHeight - 20, this.pipeWidth + 8, 20);
             this.ctx.strokeRect(p.x - 4, p.bottomY, this.pipeWidth + 8, 20);
         });
+
+        // Hover Prompt Text when in Hover Mode
+        if (!this.hasStartedFlapping) {
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            this.ctx.font = 'bold 18px Inter';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PRESS SPACEBAR OR TAP TO FLAP', this.width / 2, this.height / 2 + 70);
+        }
 
         // Render Bird
         this.ctx.save();
