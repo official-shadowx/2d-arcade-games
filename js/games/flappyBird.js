@@ -1,12 +1,11 @@
 /**
  * ============================================================================
- * AURA ARCADE — HIGH-GRAPHICS FLAPPY BIRD ENGINE (js/games/flappyBird.js)
+ * AURA ARCADE — BALANCED FLAPPY BIRD ENGINE (js/games/flappyBird.js)
  * ----------------------------------------------------------------------------
- * Features HD Visual Effects:
- * - Animated wing flapping & bird eye reflections
- * - Particle trail specks behind bird motion
- * - Textured metallic pipes with rounded end caps
- * - Parallax scrolling mountain silhouettes & atmospheric clouds
+ * Fixes & Balance Updates:
+ * - Reduced gravity (0.30) & smooth float physics for easy control
+ * - Increased pipe gap (175px) & relaxed speed (2.2px/frame)
+ * - Initial 1-second float grace period on start before first pipe spawn
  * ============================================================================
  */
 
@@ -25,27 +24,25 @@ class FlappyBirdGame {
         this.score = 0;
         this.tickCounter = 0;
 
-        // Bird Properties
+        // Bird Properties (Smoother & Slower Physics)
         this.bird = {
-            x: 120,
+            x: 140,
             y: this.height / 2,
             radius: 16,
             velocity: 0,
-            gravity: 0.45,
-            jumpForce: -8.5,
+            gravity: 0.30,      // Reduced from 0.45 for smooth float
+            jumpForce: -7.2,     // Smoother jump
             rotation: 0,
             wingAngle: 0
         };
 
-        // Particle Trail Pool
         this.particles = [];
-
-        // Pipe System
         this.pipes = [];
         this.pipeWidth = 64;
-        this.pipeGap = 150;
-        this.pipeSpeed = 3.0;
+        this.pipeGap = 175;       // Increased from 150 to 175 for comfortable gap
+        this.pipeSpeed = 2.2;     // Reduced from 3.0 to 2.2 for relaxed pacing
         this.spawnTimer = 0;
+        this.gracePeriod = 45;    // Grace period frames before first pipe
 
         this.animId = null;
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -60,6 +57,7 @@ class FlappyBirdGame {
         this.pipes = [];
         this.particles = [];
         this.spawnTimer = 0;
+        this.gracePeriod = 45;
         this.score = 0;
         this.tickCounter = 0;
 
@@ -85,11 +83,11 @@ class FlappyBirdGame {
         if (window.audioEngine) window.audioEngine.playJump();
 
         // Spawn jump particle burst
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 5; i++) {
             this.particles.push({
                 x: this.bird.x - 10,
                 y: this.bird.y + (Math.random() * 10 - 5),
-                vx: -Math.random() * 3 - 1,
+                vx: -Math.random() * 2 - 1,
                 vy: Math.random() * 2 - 1,
                 life: 1.0,
                 color: '#f59e0b'
@@ -122,8 +120,8 @@ class FlappyBirdGame {
         this.bird.y += this.bird.velocity;
 
         // Rotation & Wing Flap Animation
-        this.bird.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, this.bird.velocity * 0.08));
-        this.bird.wingAngle = Math.sin(this.tickCounter * 0.25) * 0.6;
+        this.bird.rotation = Math.min(Math.PI / 5, Math.max(-Math.PI / 5, this.bird.velocity * 0.07));
+        this.bird.wingAngle = Math.sin(this.tickCounter * 0.2) * 0.5;
 
         // Ceiling & Floor Collision
         if (this.bird.y - this.bird.radius <= 0 || this.bird.y + this.bird.radius >= this.height) {
@@ -131,19 +129,18 @@ class FlappyBirdGame {
             return;
         }
 
-        // Spawn Particles Trail
-        if (this.tickCounter % 3 === 0) {
+        // Particles Trail
+        if (this.tickCounter % 4 === 0) {
             this.particles.push({
                 x: this.bird.x - 12,
                 y: this.bird.y,
-                vx: -1.5,
-                vy: (Math.random() - 0.5) * 0.5,
+                vx: -1.2,
+                vy: (Math.random() - 0.5) * 0.4,
                 life: 0.8,
-                color: 'rgba(245, 158, 11, 0.6)'
+                color: 'rgba(245, 158, 11, 0.5)'
             });
         }
 
-        // Update Particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.x += p.vx;
@@ -152,9 +149,15 @@ class FlappyBirdGame {
             if (p.life <= 0) this.particles.splice(i, 1);
         }
 
+        // Grace Period before spawning pipes
+        if (this.gracePeriod > 0) {
+            this.gracePeriod--;
+            return;
+        }
+
         // Spawn Pipes
         this.spawnTimer++;
-        if (this.spawnTimer > 85) {
+        if (this.spawnTimer > 110) {
             this.spawnTimer = 0;
             const minHeight = 60;
             const maxHeight = this.height - this.pipeGap - minHeight;
@@ -168,7 +171,7 @@ class FlappyBirdGame {
             });
         }
 
-        // Move Pipes & Check Collisions
+        // Move Pipes & Collision Check
         for (let i = this.pipes.length - 1; i >= 0; i--) {
             const p = this.pipes[i];
             p.x -= this.pipeSpeed;
@@ -202,7 +205,7 @@ class FlappyBirdGame {
     }
 
     render() {
-        // Sky Gradient Background
+        // Sky Background
         const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height);
         skyGrad.addColorStop(0, '#0b132b');
         skyGrad.addColorStop(0.6, '#1c2541');
@@ -210,7 +213,7 @@ class FlappyBirdGame {
         this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Parallax Mountains Background
+        // Parallax Mountains
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.height);
@@ -222,7 +225,7 @@ class FlappyBirdGame {
         this.ctx.lineTo(this.width, this.height);
         this.ctx.fill();
 
-        // Render Particles Trail
+        // Particles
         this.particles.forEach(p => {
             this.ctx.fillStyle = p.color;
             this.ctx.globalAlpha = Math.max(0, p.life);
@@ -232,9 +235,8 @@ class FlappyBirdGame {
         });
         this.ctx.globalAlpha = 1.0;
 
-        // Render Textured Pipes
+        // Render Pipes
         this.pipes.forEach(p => {
-            // Metallic Gradient fill
             const pipeGrad = this.ctx.createLinearGradient(p.x, 0, p.x + this.pipeWidth, 0);
             pipeGrad.addColorStop(0, '#059669');
             pipeGrad.addColorStop(0.3, '#10b981');
@@ -243,30 +245,27 @@ class FlappyBirdGame {
 
             this.ctx.fillStyle = pipeGrad;
 
-            // Top Pipe Body
+            // Top Pipe
             this.ctx.fillRect(p.x, 0, this.pipeWidth, p.topHeight);
-            // Top Pipe Cap
             this.ctx.fillRect(p.x - 4, p.topHeight - 20, this.pipeWidth + 8, 20);
 
-            // Bottom Pipe Body
+            // Bottom Pipe
             const bottomHeight = this.height - p.bottomY;
             this.ctx.fillRect(p.x, p.bottomY, this.pipeWidth, bottomHeight);
-            // Bottom Pipe Cap
             this.ctx.fillRect(p.x - 4, p.bottomY, this.pipeWidth + 8, 20);
 
-            // Highlight Borders
-            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            // Borders
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
             this.ctx.lineWidth = 2;
             this.ctx.strokeRect(p.x - 4, p.topHeight - 20, this.pipeWidth + 8, 20);
             this.ctx.strokeRect(p.x - 4, p.bottomY, this.pipeWidth + 8, 20);
         });
 
-        // Render HD Animated Bird
+        // Render Bird
         this.ctx.save();
         this.ctx.translate(this.bird.x, this.bird.y);
         this.ctx.rotate(this.bird.rotation);
 
-        // Bird Body Radial Glow
         const birdGrad = this.ctx.createRadialGradient(-2, -2, 2, 0, 0, this.bird.radius);
         birdGrad.addColorStop(0, '#fde047');
         birdGrad.addColorStop(0.7, '#f59e0b');
@@ -276,7 +275,7 @@ class FlappyBirdGame {
         this.ctx.arc(0, 0, this.bird.radius, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Animated Wing
+        // Wing
         this.ctx.save();
         this.ctx.rotate(this.bird.wingAngle);
         this.ctx.fillStyle = '#facc15';
@@ -285,7 +284,7 @@ class FlappyBirdGame {
         this.ctx.fill();
         this.ctx.restore();
 
-        // Eye Glint
+        // Eye
         this.ctx.fillStyle = '#ffffff';
         this.ctx.beginPath();
         this.ctx.arc(6, -6, 5, 0, Math.PI * 2);
