@@ -112,6 +112,7 @@ body.custom-cursor-active input {
     pointer-events: none;
     z-index: 9999;
     transform: translate(-50%, -50%);
+    mix-blend-mode: difference;
     transition: transform 0.1s ease-out, background-color var(--transition-smooth), width 0.2s, height 0.2s;
 }
 
@@ -126,18 +127,20 @@ body.custom-cursor-active input {
     pointer-events: none;
     z-index: 9998;
     transform: translate(-50%, -50%);
-    opacity: 0.45;
+    opacity: 0.85;
+    mix-blend-mode: difference;
     transition: transform 0.15s ease-out, opacity 0.2s, width 0.2s, height 0.2s, border-color var(--transition-smooth);
 }
 
 .custom-cursor-hover .custom-cursor {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 .custom-cursor-hover .custom-cursor-follower {
-    width: 48px;
-    height: 48px;
-    opacity: 0.8;
+    width: 52px;
+    height: 52px;
+    opacity: 1;
+    border-width: 2px;
 }
 
 .shader-background-overlay {
@@ -414,12 +417,19 @@ body.custom-cursor-active input {
     gap: 16px;
     position: relative;
     cursor: pointer;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.4s ease, 
+                background 0.4s ease;
 }
 
 .game-card:hover {
-    border-color: var(--glass-border-hover);
-    transform: translateY(-6px);
-    box-shadow: var(--glass-shadow);
+    border-color: rgba(255, 255, 255, 0.35);
+    background: var(--glass-bg-hover);
+    transform: translateY(-10px) scale(1.03);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 25px rgba(255, 255, 255, 0.1);
 }
 
 .game-badge {
@@ -433,6 +443,13 @@ body.custom-cursor-active input {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--glass-border);
     color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.game-card:hover .game-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+    transform: scale(1.05);
 }
 
 .game-card-icon-box {
@@ -443,12 +460,19 @@ body.custom-cursor-active input {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+}
+
+.game-card:hover .game-card-icon-box {
+    transform: scale(1.18) rotate(-6deg);
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .game-card-icon {
     width: 30px;
     height: 30px;
     color: var(--text-primary);
+    transition: transform 0.3s ease;
 }
 
 .game-card-info h3 {
