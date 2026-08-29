@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA ARCADE — 2D Web Video Game Platform</title>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Main CSS Stylesheet -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body class="theme-dark">
+    <!-- ========================================================================= -->
+    <!-- 1. CUSTOM MOUSE CURSOR                                                    -->
+    <!-- Smooth dot cursor with physics trailing, auto-hidden on mobile screens   -->
+    <!-- ========================================================================= -->
+    <div id="custom-cursor" class="custom-cursor"></div>
+    <div id="custom-cursor-follower" class="custom-cursor-follower"></div>
+
+    <!-- Ambient Gradient Shaders Overlay -->
+    <div class="shader-background-overlay"></div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. STICKY BLUR NAVIGATION BAR                                            -->
+    <!-- ========================================================================= -->
+    <header class="glass-navbar">
+        <div class="nav-container">
+            <!-- Brand Logo -->
+            <div class="brand-logo" id="brand-logo-btn">
+                <i data-lucide="gamepad-2" class="brand-icon"></i>
+                <span class="brand-title">AURA <small>ARCADE</small></span>
+            </div>
+
+            <!-- Header Controls: Leaderboard, Day/Night Theme, User Profile, Dev Console -->
+            <div class="nav-actions">
+                <!-- User Profile / Auth Button -->
+                <button class="pill-btn user-auth-btn" id="user-auth-btn">
+                    <i data-lucide="user"></i>
+                    <span id="user-name-label">Login / Register</span>
+                </button>
+
+                <!-- Global Leaderboard Modal Trigger -->
+                <button class="icon-btn leaderboard-btn" id="leaderboard-btn" title="Global Game Leaderboard">
+                    <i data-lucide="trophy"></i>
+                </button>
+
+                <!-- Day/Night Shader Theme Toggle -->
+                <button class="icon-btn theme-toggle-btn" id="theme-toggle-btn" title="Toggle Theme (Day / Night Shader)">
+                    <i data-lucide="moon" id="theme-icon"></i>
+                </button>
+
+                <!-- Developer Diagnostic Console Trigger -->
+                <button class="icon-btn dev-console-btn" id="dev-console-btn" title="Developer Diagnostic Log & Game Engine Inspector">
+                    <i data-lucide="terminal"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================================= -->
+    <!-- 3. LANDING PAGE HERO SECTION                                              -->
+    <!-- ========================================================================= -->
+    <section class="landing-section" id="landing-section">
+        <div class="landing-content">
+            <div class="landing-badge">
+                <i data-lucide="sparkles"></i> Premium 2D Canvas Web Arcade Engine
+            </div>
+            
+            <h1 class="landing-title">
+                Play Retro 2D Classics <br>
+                <span class="gradient-text">In High-Framerate Motion</span>
+            </h1>
+            
+            <p class="landing-subtitle">
+                Flappy Bird, Snake, Chrome Dino Runner, Pong Table Tennis, and Space Invaders with real-time Web Audio sound FX, persistent leaderboards, and full screen gameplay.
+            </p>
+
+            <!-- Quick Play Action CTA Button -->
+            <div class="landing-cta-box">
+                <button class="cta-enter-btn" id="explore-games-btn">
+                    <i data-lucide="gamepad"></i> Explore All 5 Arcade Games <i data-lucide="arrow-down"></i>
+                </button>
+            </div>
+
+            <!-- Quick Game Prompt Pills -->
+            <div class="prompt-pills-container">
+                <span class="prompt-label">Quick Launch:</span>
+                <button class="prompt-pill" data-game="flappy">🐤 Flappy Bird</button>
+                <button class="prompt-pill" data-game="snake">🐍 Snake Classic</button>
+                <button class="prompt-pill" data-game="dino">🦖 Dino Runner</button>
+                <button class="prompt-pill" data-game="pong">🏓 Pong 2D</button>
+                <button class="prompt-pill" data-game="space">👾 Space Invaders</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- 4. ARCADE GAME SELECTION GRID SECTION                                     -->
+    <!-- ========================================================================= -->
+    <main class="dashboard-section" id="games-section">
+        <div class="section-header reveal-on-scroll">
+            <h2>Select An Arcade Game</h2>
+            <p>Click any game card to launch with Web Audio sound FX and full screen support</p>
+        </div>
+
+        <div class="games-grid">
+
+            <!-- GAME CARD 1: FLAPPY BIRD -->
+            <div class="glass-card game-card reveal-on-scroll" data-game="flappy">
+                <div class="game-badge">Physics & Gravity</div>
+                <div class="game-card-icon-box">
+                    <i data-lucide="bird" class="game-card-icon"></i>
+                </div>
+                <div class="game-card-info">
+                    <h3>Flappy Bird</h3>
+                    <p>Navigate the bird through procedural gap pipes using Spacebar or Screen Tap. Features gravity acceleration and collision physics.</p>
+                </div>
+                <div class="game-card-footer">
+                    <span class="high-score-badge"><i data-lucide="trophy"></i> Best: <strong id="flappy-best-score">0</strong></span>
+                    <button class="play-card-btn">Play Now <i data-lucide="play"></i></button>
+                </div>
+            </div>
+
+            <!-- GAME CARD 2: SNAKE GAME -->
+            <div class="glass-card game-card reveal-on-scroll" data-game="snake">
+                <div class="game-badge">Grid Array Logic</div>
+                <div class="game-card-icon-box">
+                    <i data-lucide="worm" class="game-card-icon"></i>
+                </div>
+                <div class="game-card-info">
+                    <h3>Snake Classic</h3>
+                    <p>Guide the growing snake to eat food pellets across a grid matrix. Save high scores and avoid wall & self collisions.</p>
+                </div>
+                <div class="game-card-footer">
+                    <span class="high-score-badge"><i data-lucide="trophy"></i> Best: <strong id="snake-best-score">0</strong></span>
+                    <button class="play-card-btn">Play Now <i data-lucide="play"></i></button>
+                </div>
+            </div>
+
+            <!-- GAME CARD 3: CHROME DINO RUNNER -->
+            <div class="glass-card game-card reveal-on-scroll" data-game="dino">
+                <div class="game-badge">Procedural Obstacles</div>
+                <div class="game-card-icon-box">
+                    <i data-lucide="footprints" class="game-card-icon"></i>
+                </div>
+                <div class="game-card-info">
+                    <h3>Dino Runner</h3>
+                    <p>Endless runner with jumping and ducking mechanics over procedural cacti and flying birds. Speed scales over time.</p>
+                </div>
+                <div class="game-card-footer">
+                    <span class="high-score-badge"><i data-lucide="trophy"></i> Best: <strong id="dino-best-score">0</strong></span>
+                    <button class="play-card-btn">Play Now <i data-lucide="play"></i></button>
+                </div>
+            </div>
+
+            <!-- GAME CARD 4: PONG (2D TABLE TENNIS) -->
+            <div class="glass-card game-card reveal-on-scroll" data-game="pong">
+                <div class="game-badge">Vector Reflections & AI</div>
+                <div class="game-card-icon-box">
+                    <i data-lucide="swords" class="game-card-icon"></i>
+                </div>
+                <div class="game-card-info">
+                    <h3>Pong 2D Table Tennis</h3>
+                    <p>Classic 2D paddle table tennis. Play Single Player against adaptive AI or 2-Player local mode with ball bounce angles.</p>
+                </div>
+                <div class="game-card-footer">
+                    <span class="high-score-badge"><i data-lucide="trophy"></i> Best: <strong id="pong-best-score">0</strong></span>
+                    <button class="play-card-btn">Play Now <i data-lucide="play"></i></button>
+                </div>
+            </div>
+
+            <!-- GAME CARD 5: SPACE INVADERS -->
+            <div class="glass-card game-card reveal-on-scroll" data-game="space">
+                <div class="game-badge">Laser Array Matrix</div>
+                <div class="game-card-icon-box">
+                    <i data-lucide="rocket" class="game-card-icon"></i>
+                </div>
+                <div class="game-card-info">
+                    <h3>Space Invaders</h3>
+                    <p>Defend the galaxy against marching alien fleets. Shoot laser beams, dodge enemy bombs, and clear alien waves.</p>
+                </div>
+                <div class="game-card-footer">
+                    <span class="high-score-badge"><i data-lucide="trophy"></i> Best: <strong id="space-best-score">0</strong></span>
+                    <button class="play-card-btn">Play Now <i data-lucide="play"></i></button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- 5. ACTIVE GAME VIEWPORT MODAL (FULLSCREEN CANVASES)                       -->
+    <!-- Displays active 2D game canvas, score HUD, controls, and touch D-Pad.    -->
+    <!-- ========================================================================= -->
+    <div class="game-modal-overlay" id="game-modal-overlay">
+        <div class="game-modal-container glass-card" id="game-modal-container">
+            
+            <!-- Game Viewport Header Bar -->
+            <div class="game-modal-header">
+                <div class="game-title-badge">
+                    <i data-lucide="gamepad-2" id="active-game-icon"></i>
+                    <h3 id="active-game-title">Game Title</h3>
+                </div>
+
+                <!-- HUD Score Counters -->
+                <div class="hud-score-box">
+                    <div class="hud-item">SCORE: <strong id="hud-score-val">0</strong></div>
+                    <div class="hud-item">HIGH SCORE: <strong id="hud-high-val">0</strong></div>
+                </div>
+
+                <!-- Viewport Control Buttons: Fullscreen, Restart, Pause, Close -->
+                <div class="game-control-buttons">
+                    <button class="game-action-btn" id="game-fullscreen-btn" title="Toggle Fullscreen Mode">
+                        <i data-lucide="maximize"></i>
+                    </button>
+                    <button class="game-action-btn" id="game-restart-btn" title="Restart Game">
+                        <i data-lucide="rotate-ccw"></i>
+                    </button>
+                    <button class="game-action-btn" id="game-pause-btn" title="Pause / Resume Game">
+                        <i data-lucide="pause"></i>
+                    </button>
+                    <button class="game-action-btn close-modal-btn" id="close-game-modal-btn" title="Exit Game">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- HTML5 2D Canvas Container -->
+            <div class="canvas-wrapper" id="canvas-wrapper">
+                <canvas id="game-canvas" width="800" height="500"></canvas>
+                
+                <!-- Game Over & Start Overlay Screen inside Canvas -->
+                <div class="game-overlay-banner" id="game-overlay-banner">
+                    <h2 id="overlay-title">PRESS SPACE OR TAP TO START</h2>
+                    <p id="overlay-subtitle">Use Keyboard Arrow keys / WASD / Spacebar to play</p>
+                    <button class="cta-enter-btn" id="overlay-action-btn">START GAME</button>
+                </div>
+            </div>
+
+            <!-- Mobile On-Screen Touch Controls (Displayed automatically on mobile) -->
+            <div class="mobile-touch-pad" id="mobile-touch-pad">
+                <div class="dpad-left-right">
+                    <button class="touch-btn" id="touch-left-btn"><i data-lucide="arrow-left"></i></button>
+                    <button class="touch-btn" id="touch-right-btn"><i data-lucide="arrow-right"></i></button>
+                </div>
+                <div class="dpad-action">
+                    <button class="touch-btn touch-action-btn" id="touch-action-btn">ACTION / JUMP / SHOOT</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 6. USER AUTH & GLOBAL LEADERBOARD MODAL                                   -->
+    <!-- ========================================================================= -->
+    <div class="modal-overlay" id="leaderboard-modal-overlay">
+        <div class="modal-card glass-card">
+            <div class="modal-header">
+                <div class="modal-title-flex">
+                    <i data-lucide="trophy" class="modal-icon"></i>
+                    <h3>Global Arcade Leaderboard</h3>
+                </div>
+                <button class="close-btn" id="close-leaderboard-modal-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Game Selection Tabs -->
+                <div class="tab-buttons-row">
+                    <button class="tab-btn active" data-tab="flappy">Flappy Bird</button>
+                    <button class="tab-btn" data-tab="snake">Snake</button>
+                    <button class="tab-btn" data-tab="dino">Dino</button>
+                    <button class="tab-btn" data-tab="pong">Pong</button>
+                    <button class="tab-btn" data-tab="space">Space Invaders</button>
+                </div>
+
+                <!-- Leaderboard Table -->
+                <div class="leaderboard-table-container">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <tr>
+                                <th># Rank</th>
+                                <th>Player Name</th>
+                                <th>High Score</th>
+                                <th>Achieved Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-tbody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- USER LOGIN / REGISTER MODAL -->
+    <div class="modal-overlay" id="auth-modal-overlay">
+        <div class="modal-card glass-card small-modal">
+            <div class="modal-header">
+                <div class="modal-title-flex">
+                    <i data-lucide="user-check" class="modal-icon"></i>
+                    <h3>Player Login / Sign Up</h3>
+                </div>
+                <button class="close-btn" id="close-auth-modal-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="auth-form" onsubmit="return false;">
+                    <div class="input-group">
+                        <label for="auth-username">Username / Player Name:</label>
+                        <input type="text" id="auth-username" placeholder="Enter player handle..." required>
+                    </div>
+                    <div class="input-group">
+                        <label for="auth-password">Password:</label>
+                        <input type="password" id="auth-password" placeholder="Enter password..." required>
+                    </div>
+                    <button type="submit" class="cta-enter-btn full-width-btn" id="auth-submit-btn">Login / Save Profile</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 7. DEVELOPER DIAGNOSTIC CONSOLE MODAL                                     -->
+    <!-- ========================================================================= -->
+    <div class="dev-modal-overlay" id="dev-modal-overlay">
+        <div class="dev-modal-card glass-card">
+            <div class="dev-modal-header">
+                <div class="dev-title-flex">
+                    <i data-lucide="terminal" class="terminal-icon"></i>
+                    <h3>Developer Diagnostic Console</h3>
+                </div>
+                <button class="close-btn" id="close-dev-modal-btn">&times;</button>
+            </div>
+            
+            <div class="dev-modal-body">
+                <div class="dev-status-banner" id="dev-status-banner">
+                    <i data-lucide="check-circle" id="dev-status-icon"></i>
+                    <span id="dev-status-summary">System Status: Web Audio & 2D Canvas Engines Operational.</span>
+                </div>
+
+                <div class="dev-log-container">
+                    <h4><i data-lucide="file-text"></i> Real-Time Console Trail & Game Loop Logs:</h4>
+                    <pre id="dev-log-output">Initializing AURA Arcade Engine... Ready.</pre>
+                </div>
+
+                <div class="dev-guide-box">
+                    <h4><i data-lucide="help-circle"></i> Developer Troubleshooting & Architecture:</h4>
+                    <ul>
+                        <li><strong>Audio Synthesizer:</strong> Web Audio API `AudioContext` oscillators (Square, Triangle, Noise buffers) for sound FX.</li>
+                        <li><strong>Graphics Engine:</strong> HTML5 2D Canvas (`requestAnimationFrame`) with delta-time physics.</li>
+                        <li><strong>Score Persistence:</strong> LocalStorage + Leaderboard State Manager.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 8. FOOTER CREDITS                                                         -->
+    <!-- ========================================================================= -->
+    <footer class="app-footer">
+        <p>Crafted with <i data-lucide="heart" class="heart-icon"></i> by <strong>SHADOW X</strong> | Powered by AURA 2D Arcade Engine</p>
+    </footer>
+
+    <!-- ========================================================================= -->
+    <!-- 9. SCRIPT FILES (Modular Architecture)                                    -->
+    <!-- ========================================================================= -->
+    <!-- Web Audio API Sound Synthesizer -->
+    <script src="js/audioEngine.js"></script>
+
+    <!-- User Auth & Leaderboard Manager -->
+    <script src="js/leaderboard.js"></script>
+
+    <!-- 5 Game Engines -->
+    <script src="js/games/flappyBird.js"></script>
+    <script src="js/games/snakeGame.js"></script>
+    <script src="js/games/dinoRunner.js"></script>
+    <script src="js/games/pongGame.js"></script>
+    <script src="js/games/spaceInvaders.js"></script>
+
+    <!-- Custom Dot Cursor -->
+    <script src="js/customCursor.js"></script>
+
+    <!-- UI Manager -->
+    <script src="js/uiManager.js"></script>
+
+    <!-- Main Entry Point -->
+    <script src="js/app.js"></script>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>
