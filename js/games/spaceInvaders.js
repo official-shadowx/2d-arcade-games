@@ -1,13 +1,11 @@
 /**
  * ============================================================================
- * AURA ARCADE — REDESIGNED SPACE INVADERS ENGINE (js/games/spaceInvaders.js)
+ * AURA ARCADE — SIMPLIFIED & BALANCED SPACE INVADERS (js/games/spaceInvaders.js)
  * ----------------------------------------------------------------------------
- * Features & Architecture:
- * - Player Fighter Cannon placed firmly at bottom center
- * - Destructible Defense Shields / Bunkers for strategic cover
- * - Marching alien matrix (Top, Mid, Bot) stepping down on edge hit
- * - Player upward cyan lasers & alien downward red missiles
- * - Wave progression & score HUD
+ * Fixes:
+ * - Reduced alien fleet count (12 aliens: 2 rows x 6 cols) for clear spacial visibility
+ * - Relaxed marching speed (0.6px/frame)
+ * - Clear bottom player cannon with 4 destructible shields & fast laser cannons
  * ============================================================================
  */
 
@@ -22,29 +20,30 @@ class SpaceInvadersGame {
         this.height = canvas.height;
         this.tickCounter = 0;
 
-        // Player Spaceship at bottom center
+        // Player Cannon at Bottom Center
         this.player = {
-            x: this.width / 2 - 22,
+            x: this.width / 2 - 24,
             y: this.height - 54,
-            width: 44,
-            height: 26,
-            speed: 6.5,
+            width: 48,
+            height: 28,
+            speed: 7.0,
             lives: 3
         };
 
         this.bullets = [];
         this.enemyBullets = [];
         this.particles = [];
-        this.bunkers = []; // Destructible Shields
+        this.bunkers = [];
         this.shootCooldown = 0;
 
+        // Simplified Alien Fleet (2 rows x 6 cols = 12 total aliens)
         this.aliens = [];
-        this.alienCols = 8;
-        this.alienRows = 4;
-        this.alienWidth = 34;
-        this.alienHeight = 24;
+        this.alienCols = 6;
+        this.alienRows = 2;
+        this.alienWidth = 40;
+        this.alienHeight = 28;
         this.alienDir = 1;
-        this.alienSpeed = 1.0; // Smooth marching speed
+        this.alienSpeed = 0.6; // Relaxed marching speed
 
         this.isRunning = false;
         this.isGameOver = false;
@@ -57,7 +56,7 @@ class SpaceInvadersGame {
     }
 
     start() {
-        this.player.x = this.width / 2 - 22;
+        this.player.x = this.width / 2 - 24;
         this.player.y = this.height - 54;
         this.player.lives = 3;
 
@@ -65,7 +64,7 @@ class SpaceInvadersGame {
         this.enemyBullets = [];
         this.particles = [];
         this.shootCooldown = 0;
-        this.alienSpeed = 1.0;
+        this.alienSpeed = 0.6;
         this.score = 0;
         this.tickCounter = 0;
 
@@ -86,18 +85,20 @@ class SpaceInvadersGame {
 
     initAliens() {
         this.aliens = [];
-        const startX = 70;
-        const startY = 40;
+        const spacingX = 40;
+        const totalAlienWidth = this.alienCols * this.alienWidth + (this.alienCols - 1) * spacingX;
+        const startX = (this.width - totalAlienWidth) / 2;
+        const startY = 50;
 
         for (let r = 0; r < this.alienRows; r++) {
             for (let c = 0; c < this.alienCols; c++) {
                 this.aliens.push({
-                    x: startX + c * (this.alienWidth + 24),
-                    y: startY + r * (this.alienHeight + 18),
+                    x: startX + c * (this.alienWidth + spacingX),
+                    y: startY + r * (this.alienHeight + 24),
                     width: this.alienWidth,
                     height: this.alienHeight,
                     alive: true,
-                    type: r === 0 ? 'top' : (r < 3 ? 'mid' : 'bot')
+                    type: r === 0 ? 'top' : 'bot'
                 });
             }
         }
@@ -106,7 +107,7 @@ class SpaceInvadersGame {
     initBunkers() {
         this.bunkers = [];
         const numBunkers = 4;
-        const bunkerWidth = 60;
+        const bunkerWidth = 64;
         const bunkerHeight = 24;
         const spacing = (this.width - numBunkers * bunkerWidth) / (numBunkers + 1);
         const y = this.height - 120;
@@ -117,7 +118,7 @@ class SpaceInvadersGame {
                 y: y,
                 width: bunkerWidth,
                 height: bunkerHeight,
-                hp: 12 // Health points before destruction
+                hp: 12
             });
         }
     }
@@ -140,10 +141,10 @@ class SpaceInvadersGame {
                 x: this.player.x + this.player.width / 2 - 2,
                 y: this.player.y,
                 width: 4,
-                height: 14,
-                speed: 8.5
+                height: 16,
+                speed: 10.0 // Fast laser speed
             });
-            this.shootCooldown = 14;
+            this.shootCooldown = 12;
             if (window.audioEngine) window.audioEngine.playShoot();
         }
     }
@@ -178,12 +179,17 @@ class SpaceInvadersGame {
     update() {
         if (this.shootCooldown > 0) this.shootCooldown--;
 
-        // Player Cannon Movement
+        // Player Movement (A/D or Left/Right Arrow)
         if (this.keys['ArrowLeft'] || this.keys['KeyA']) {
             this.player.x = Math.max(10, this.player.x - this.player.speed);
         }
         if (this.keys['ArrowRight'] || this.keys['KeyD']) {
             this.player.x = Math.min(this.width - this.player.width - 10, this.player.x + this.player.speed);
+        }
+
+        // Auto Shooting if spacebar is held down
+        if (this.keys['Space']) {
+            this.shoot();
         }
 
         // Thruster flame particles
@@ -212,7 +218,7 @@ class SpaceInvadersGame {
             const b = this.bullets[i];
             b.y -= b.speed;
 
-            // Check Bunker Collision
+            // Bunker Hit
             let hitBunker = false;
             for (let bk of this.bunkers) {
                 if (bk.hp > 0 && b.x < bk.x + bk.width && b.x + b.width > bk.x && b.y < bk.y + bk.height && b.y + b.height > bk.y) {
@@ -224,12 +230,12 @@ class SpaceInvadersGame {
             }
             if (hitBunker) continue;
 
-            // Check Alien Collision
+            // Alien Hit
             for (let a of this.aliens) {
                 if (a.alive && b.x < a.x + a.width && b.x + b.width > a.x && b.y < a.y + a.height && b.y + b.height > a.y) {
                     a.alive = false;
                     this.bullets.splice(i, 1);
-                    this.score += 20;
+                    this.score += 50;
                     this.onScoreUpdate(this.score);
                     this.spawnExplosion(a.x + a.width / 2, a.y + a.height / 2, a.type === 'top' ? '#f59e0b' : '#a855f7');
                     if (window.audioEngine) window.audioEngine.playHit();
@@ -242,20 +248,20 @@ class SpaceInvadersGame {
             }
         }
 
-        // March Alien Matrix
+        // March Alien Fleet
         let edgeHit = false;
         const livingAliens = this.aliens.filter(a => a.alive);
 
         if (livingAliens.length === 0) {
-            // Wave cleared! Respawn wave & increase speed
-            this.alienSpeed += 0.35;
+            // Wave Cleared! Respawn next wave with speed boost
+            this.alienSpeed += 0.3;
             this.initAliens();
             return;
         }
 
         livingAliens.forEach(a => {
             a.x += this.alienDir * this.alienSpeed;
-            if (a.x <= 15 || a.x + a.width >= this.width - 15) {
+            if (a.x <= 20 || a.x + a.width >= this.width - 20) {
                 edgeHit = true;
             }
         });
@@ -263,7 +269,7 @@ class SpaceInvadersGame {
         if (edgeHit) {
             this.alienDir *= -1;
             livingAliens.forEach(a => {
-                a.y += 12;
+                a.y += 16;
                 if (a.y + a.height >= this.player.y) {
                     this.triggerGameOver();
                 }
@@ -271,14 +277,14 @@ class SpaceInvadersGame {
         }
 
         // Alien Bomb Drops
-        if (Math.random() < 0.02 && livingAliens.length > 0) {
+        if (Math.random() < 0.015 && livingAliens.length > 0) {
             const shooter = livingAliens[Math.floor(Math.random() * livingAliens.length)];
             this.enemyBullets.push({
                 x: shooter.x + shooter.width / 2 - 2,
                 y: shooter.y + shooter.height,
                 width: 4,
                 height: 12,
-                speed: 4.2
+                speed: 4.0
             });
         }
 
@@ -287,7 +293,7 @@ class SpaceInvadersGame {
             const eb = this.enemyBullets[i];
             eb.y += eb.speed;
 
-            // Bunker Collision
+            // Bunker Hit
             let hitBk = false;
             for (let bk of this.bunkers) {
                 if (bk.hp > 0 && eb.x < bk.x + bk.width && eb.x + eb.width > bk.x && eb.y < bk.y + bk.height && eb.y + eb.height > bk.y) {
@@ -299,7 +305,7 @@ class SpaceInvadersGame {
             }
             if (hitBk) continue;
 
-            // Player Collision
+            // Player Hit
             if (
                 eb.x < this.player.x + this.player.width &&
                 eb.x + eb.width > this.player.x &&
@@ -333,15 +339,21 @@ class SpaceInvadersGame {
         this.ctx.fillStyle = '#050711';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Twinkling Starfield
+        // Starfield
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        for (let i = 0; i < 40; i++) {
+        for (let i = 0; i < 35; i++) {
             const x = (i * 37) % this.width;
             const y = (i * 59) % this.height;
             this.ctx.fillRect(x, y, 2, 2);
         }
 
-        // Render Destructible Bunkers / Shields
+        // On-Screen Control Guide Header
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        this.ctx.font = '12px Inter';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('CONTROLS: LEFT / RIGHT ARROWS (or A/D) TO MOVE  |  SPACEBAR TO SHOOT', this.width / 2, 20);
+
+        // Destructible Bunkers / Shields
         this.bunkers.forEach(bk => {
             if (bk.hp <= 0) return;
             const alpha = bk.hp / 12;
@@ -351,7 +363,7 @@ class SpaceInvadersGame {
             this.ctx.fill();
         });
 
-        // Render Particles
+        // Particles
         this.particles.forEach(p => {
             this.ctx.fillStyle = p.color;
             this.ctx.globalAlpha = Math.max(0, p.life);
@@ -361,7 +373,7 @@ class SpaceInvadersGame {
         });
         this.ctx.globalAlpha = 1.0;
 
-        // Render Player Spaceship Cannon
+        // Player Spaceship Cannon
         this.ctx.fillStyle = '#10b981';
         const px = this.player.x;
         const py = this.player.y;
@@ -381,13 +393,13 @@ class SpaceInvadersGame {
         this.ctx.fillStyle = '#38bdf8';
         this.ctx.fillRect(px + pw / 2 - 3, py + 8, 6, 8);
 
-        // Player Lives HUD
+        // Lives HUD Icons
         for (let l = 0; l < this.player.lives; l++) {
             this.ctx.fillStyle = '#10b981';
             this.ctx.beginPath();
-            this.ctx.moveTo(24 + l * 22, 20);
-            this.ctx.lineTo(34 + l * 22, 30);
-            this.ctx.lineTo(14 + l * 22, 30);
+            this.ctx.moveTo(24 + l * 22, 35);
+            this.ctx.lineTo(34 + l * 22, 45);
+            this.ctx.lineTo(14 + l * 22, 45);
             this.ctx.fill();
         }
 
@@ -403,15 +415,13 @@ class SpaceInvadersGame {
             this.ctx.fillRect(eb.x, eb.y, eb.width, eb.height);
         });
 
-        // HD Animated Aliens Matrix
+        // HD Aliens
         const legFrame = Math.sin(this.tickCounter * 0.15) > 0;
 
         this.aliens.forEach(a => {
             if (!a.alive) return;
 
-            if (a.type === 'top') this.ctx.fillStyle = '#f59e0b';
-            else if (a.type === 'mid') this.ctx.fillStyle = '#a855f7';
-            else this.ctx.fillStyle = '#ec4899';
+            this.ctx.fillStyle = a.type === 'top' ? '#f59e0b' : '#a855f7';
 
             this.ctx.beginPath();
             this.ctx.roundRect(a.x, a.y, a.width, a.height - 4, 4);
@@ -419,16 +429,17 @@ class SpaceInvadersGame {
 
             // Eyes
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.fillRect(a.x + 6, a.y + 6, 4, 4);
-            this.ctx.fillRect(a.x + a.width - 10, a.y + 6, 4, 4);
+            this.ctx.fillRect(a.x + 8, a.y + 6, 5, 5);
+            this.ctx.fillRect(a.x + a.width - 13, a.y + 6, 5, 5);
 
-            // Animated Tentacle Legs
+            // Legs
+            this.ctx.fillStyle = a.type === 'top' ? '#f59e0b' : '#a855f7';
             if (legFrame) {
-                this.ctx.fillRect(a.x + 4, a.y + a.height - 4, 4, 6);
-                this.ctx.fillRect(a.x + a.width - 8, a.y + a.height - 4, 4, 6);
+                this.ctx.fillRect(a.x + 6, a.y + a.height - 4, 5, 6);
+                this.ctx.fillRect(a.x + a.width - 11, a.y + a.height - 4, 5, 6);
             } else {
-                this.ctx.fillRect(a.x + 8, a.y + a.height - 4, 4, 6);
-                this.ctx.fillRect(a.x + a.width - 12, a.y + a.height - 4, 4, 6);
+                this.ctx.fillRect(a.x + 10, a.y + a.height - 4, 5, 6);
+                this.ctx.fillRect(a.x + a.width - 15, a.y + a.height - 4, 5, 6);
             }
         });
     }
